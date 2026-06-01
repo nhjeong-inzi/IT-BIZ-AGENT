@@ -96,6 +96,7 @@ async function searchBizNews(bank, query) {
         summary:      item.desc || item.title,
         source:       item.link,
         published_at: formatDate(item.pubDate),
+        src_type:     'bank',
       };
     });
 }

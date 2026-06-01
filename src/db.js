@@ -120,11 +120,7 @@ export function getRunLogs(limit = 20) {
 }
 
 export function initBizOppsTable() {
-  try {
-    getDb().exec(`
-      ALTER TABLE articles ADD COLUMN _dummy TEXT;
-    `);
-  } catch {}
+  try { getDb().exec(`ALTER TABLE articles ADD COLUMN _dummy TEXT`); } catch {}
   getDb().exec(`
     CREATE TABLE IF NOT EXISTS biz_opps (
       id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -144,14 +140,17 @@ export function initBizOppsTable() {
     CREATE INDEX IF NOT EXISTS idx_biz_sol ON biz_opps(sol);
     CREATE INDEX IF NOT EXISTS idx_biz_pri ON biz_opps(priority);
   `);
+  // 기존 DB 마이그레이션: src_type 컬럼 추가
+  try { getDb().exec(`ALTER TABLE biz_opps ADD COLUMN src_type TEXT NOT NULL DEFAULT 'bank'`); } catch {}
+  try { getDb().exec(`CREATE INDEX IF NOT EXISTS idx_biz_srctype ON biz_opps(src_type)`); } catch {}
 }
 
 export function insertBizOpps(items) {
   const db = getDb();
   const stmt = db.prepare(`
     INSERT OR IGNORE INTO biz_opps
-      (title, org, sol, priority, deadline, budget, summary, source, published_at, collected_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?)
+      (title, org, sol, priority, deadline, budget, summary, source, published_at, collected_at, src_type)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?)
   `);
   const now = new Date().toISOString();
   let saved = 0;
@@ -159,19 +158,21 @@ export function insertBizOpps(items) {
     const r = stmt.run(
       a.title||'', a.org||'', a.sol||'', a.priority||'중',
       a.deadline||'확인필요', a.budget||'미공개',
-      a.summary||'', a.source||'', a.published_at||null, now
+      a.summary||'', a.source||'', a.published_at||null, now,
+      a.src_type||'bank'
     );
     if (r.changes) saved++;
   }
   return saved;
 }
 
-export function queryBizOpps({ org, sol, priority, dateFrom, dateTo } = {}) {
+export function queryBizOpps({ org, sol, priority, srcType, dateFrom, dateTo } = {}) {
   const db = getDb();
   const conds = [], params = [];
-  if (org)      { conds.push(`org = ?`);      params.push(org); }
-  if (sol)      { conds.push(`sol = ?`);      params.push(sol); }
-  if (priority) { conds.push(`priority = ?`); params.push(priority); }
+  if (org)      { conds.push(`org = ?`);               params.push(org); }
+  if (sol)      { conds.push(`sol = ?`);               params.push(sol); }
+  if (priority) { conds.push(`priority = ?`);          params.push(priority); }
+  if (srcType)  { conds.push(`src_type = ?`);          params.push(srcType); }
   if (dateFrom) { conds.push(`DATE(collected_at) >= ?`); params.push(dateFrom); }
   if (dateTo)   { conds.push(`DATE(collected_at) <= ?`); params.push(dateTo); }
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
@@ -183,12 +184,13 @@ export function queryBizOpps({ org, sol, priority, dateFrom, dateTo } = {}) {
 export function getBizStats() {
   const db = getDb();
   return {
-    total:     db.prepare(`SELECT COUNT(*) as c FROM biz_opps`).get().c,
-    byOrg:     db.prepare(`SELECT org, COUNT(*) as c FROM biz_opps GROUP BY org ORDER BY c DESC`).all(),
-    bySol:     db.prepare(`SELECT sol, COUNT(*) as c FROM biz_opps GROUP BY sol ORDER BY c DESC`).all(),
-    byPriority:db.prepare(`SELECT priority, COUNT(*) as c FROM biz_opps GROUP BY priority`).all(),
-    lastCollected: db.prepare(`SELECT collected_at FROM biz_opps ORDER BY id DESC LIMIT 1`).get()?.collected_at || null,
-    dates:     db.prepare(`SELECT DATE(collected_at) as d, COUNT(*) as c FROM biz_opps GROUP BY d ORDER BY d DESC LIMIT 30`).all(),
+    total:        db.prepare(`SELECT COUNT(*) as c FROM biz_opps`).get().c,
+    byOrg:        db.prepare(`SELECT org, COUNT(*) as c FROM biz_opps GROUP BY org ORDER BY c DESC`).all(),
+    bySol:        db.prepare(`SELECT sol, COUNT(*) as c FROM biz_opps GROUP BY sol ORDER BY c DESC`).all(),
+    byPriority:   db.prepare(`SELECT priority, COUNT(*) as c FROM biz_opps GROUP BY priority`).all(),
+    bySrcType:    db.prepare(`SELECT src_type, COUNT(*) as c FROM biz_opps GROUP BY src_type`).all(),
+    lastCollected:db.prepare(`SELECT collected_at FROM biz_opps ORDER BY id DESC LIMIT 1`).get()?.collected_at || null,
+    dates:        db.prepare(`SELECT DATE(collected_at) as d, COUNT(*) as c FROM biz_opps GROUP BY d ORDER BY d DESC LIMIT 30`).all(),
   };
 }
 

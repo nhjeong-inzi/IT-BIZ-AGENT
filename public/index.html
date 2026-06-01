@@ -398,26 +398,35 @@ header {
         <!-- 통계 스트립 -->
         <div class="stats" style="margin-bottom:14px;">
           <div class="stat-card sc-total"><div class="sc-label">전체 공고</div><div class="sc-val" id="biz-total">-</div><div class="sc-sub">누적</div></div>
+          <div class="stat-card sc-high" style="cursor:pointer" onclick="setBizType('bank', document.querySelector('[data-btype=bank]'))"><div class="sc-label">🏦 금융기관</div><div class="sc-val" id="biz-bank-count">-</div><div class="sc-sub">뉴스 수집</div></div>
+          <div class="stat-card" style="background:#E8F5E9;border-color:#A5D6A7;cursor:pointer" onclick="setBizType('g2b', document.querySelector('[data-btype=g2b]'))"><div class="sc-label" style="color:#2E7D32">🏛️ 공공사업</div><div class="sc-val" style="color:#2E7D32" id="biz-g2b-count">-</div><div class="sc-sub">나라장터</div></div>
           <div class="stat-card sc-high"><div class="sc-label">우선순위 상</div><div class="sc-val" id="biz-high">-</div><div class="sc-sub">즉시 검토</div></div>
-          <div class="stat-card sc-mid"><div class="sc-label">우선순위 중</div><div class="sc-val" id="biz-mid">-</div><div class="sc-sub">검토 권장</div></div>
-          <div class="stat-card sc-today"><div class="sc-label">마지막 수집</div><div class="sc-val" style="font-size:13px;padding-top:4px" id="biz-last">-</div><div class="sc-sub" id="biz-last-date"></div></div>
           <div class="stat-card" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
             <button id="biz-collect-btn" onclick="triggerBizCollect()" style="padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔍 뉴스 수집</button>
-            <button id="g2b-collect-btn" onclick="triggerG2BCollect()" style="padding:8px 14px;background:#0F6E56;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🏛️ 나라장터</button>
+            <button id="g2b-collect-btn" onclick="triggerG2BCollect()" style="padding:8px 14px;background:#2E7D32;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🏛️ 나라장터</button>
           </div>
         </div>
 
         <!-- 필터 툴바 -->
         <div class="toolbar" style="margin-bottom:14px;">
+          <!-- 구분 탭 -->
           <div class="toolbar-row">
-            <span class="filter-label">은행</span>
-            <button class="filter-btn active" data-borg="all"    onclick="setBizOrg('all',this)">전체</button>
-            <button class="filter-btn" data-borg="우리은행"       onclick="setBizOrg('우리은행',this)">🏦 우리은행</button>
-            <button class="filter-btn" data-borg="KB국민은행"     onclick="setBizOrg('KB국민은행',this)">🏦 KB국민은행</button>
-            <button class="filter-btn" data-borg="하나은행"       onclick="setBizOrg('하나은행',this)">🏦 하나은행</button>
-            <button class="filter-btn" data-borg="신한은행"       onclick="setBizOrg('신한은행',this)">🏦 신한은행</button>
-            <button class="filter-btn" data-borg="NH농협은행"     onclick="setBizOrg('NH농협은행',this)">🏦 NH농협은행</button>
+            <span class="filter-label">구분</span>
+            <button class="filter-btn active" data-btype="all"    onclick="setBizType('all',this)">전체</button>
+            <button class="filter-btn" data-btype="bank"          onclick="setBizType('bank',this)">🏦 금융기관</button>
+            <button class="filter-btn" data-btype="g2b"           onclick="setBizType('g2b',this)">🏛️ 공공사업</button>
           </div>
+          <!-- 은행 필터 (금융기관 구분에서만 활성) -->
+          <div class="toolbar-row" id="biz-bank-row">
+            <span class="filter-label">은행</span>
+            <button class="filter-btn active" data-borg="all"     onclick="setBizOrg('all',this)">전체</button>
+            <button class="filter-btn" data-borg="우리은행"        onclick="setBizOrg('우리은행',this)">우리은행</button>
+            <button class="filter-btn" data-borg="KB국민은행"      onclick="setBizOrg('KB국민은행',this)">KB국민</button>
+            <button class="filter-btn" data-borg="하나은행"        onclick="setBizOrg('하나은행',this)">하나은행</button>
+            <button class="filter-btn" data-borg="신한은행"        onclick="setBizOrg('신한은행',this)">신한은행</button>
+            <button class="filter-btn" data-borg="NH농협은행"      onclick="setBizOrg('NH농협은행',this)">NH농협</button>
+          </div>
+          <!-- 솔루션 필터 -->
           <div class="toolbar-row">
             <span class="filter-label">솔루션</span>
             <button class="filter-btn active" data-bsol="all"     onclick="setBizSol('all',this)">전체</button>
@@ -634,12 +643,13 @@ function goPage(p) { state.page=p; loadArticles(); window.scrollTo({top:0,behavi
 // ══════════════════════════════════════════════════════
 // 사업공고자료 섹션
 // ══════════════════════════════════════════════════════
-let bizLoaded = false;
-let bizOrgFilter = 'all';
-let bizSolFilter = 'all';
-let bizDateFrom  = '';
-let bizDateTo    = '';
-let bizPollTimer = null;
+let bizLoaded   = false;
+let bizTypeFilter = 'all';   // 'all' | 'bank' | 'g2b'
+let bizOrgFilter  = 'all';
+let bizSolFilter  = 'all';
+let bizDateFrom   = '';
+let bizDateTo     = '';
+let bizPollTimer  = null;
 
 // ── Biz Sidebar ───────────────────────────────────────
 function renderBizSidebar(dates, total) {
@@ -684,21 +694,39 @@ function bizSbSelectDate(date, el) {
 
 const SOL_LABELS = { ocr:'AI OCR', image:'이미지시스템', rpa:'RPA', id:'신분증인식', digital:'디지털창구' };
 
+function setBizType(type, btn) {
+  bizTypeFilter = type;
+  bizOrgFilter  = 'all';
+  document.querySelectorAll('[data-btype]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // 은행 필터 행: 공공사업 선택 시 숨김
+  const bankRow = document.getElementById('biz-bank-row');
+  bankRow.style.display = (type === 'g2b') ? 'none' : '';
+  // 은행 필터 초기화
+  document.querySelectorAll('[data-borg]').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-borg="all"]').classList.add('active');
+  loadBizOpps();
+}
+
 async function loadBizOpps() {
   document.getElementById('biz-cards').innerHTML = `<div class="loading-msg"><div class="spinner"></div>사업공고 데이터 불러오는 중...</div>`;
   try {
     const params = new URLSearchParams();
-    if (bizOrgFilter !== 'all') params.set('org', bizOrgFilter);
-    if (bizSolFilter !== 'all') params.set('sol', bizSolFilter);
+    if (bizTypeFilter !== 'all') params.set('src_type', bizTypeFilter);
+    if (bizOrgFilter !== 'all')  params.set('org', bizOrgFilter);
+    if (bizSolFilter !== 'all')  params.set('sol', bizSolFilter);
     if (bizDateFrom) params.set('date_from', bizDateFrom);
     if (bizDateTo)   params.set('date_to',   bizDateTo);
     const data = await api(`/api/biz-opps?${params}`);
     bizLoaded = true;
     const s = data.stats || {};
     setEl('biz-total', s.total || 0);
-    const byPri = Object.fromEntries((s.byPriority||[]).map(r=>[r.priority,r.c]));
-    setEl('biz-high', byPri['상']||0);
-    setEl('biz-mid',  byPri['중']||0);
+    const byPri  = Object.fromEntries((s.byPriority||[]).map(r=>[r.priority,r.c]));
+    const bySrc  = Object.fromEntries((s.bySrcType||[]).map(r=>[r.src_type,r.c]));
+    setEl('biz-high',       byPri['상']||0);
+    setEl('biz-mid',        byPri['중']||0);
+    setEl('biz-bank-count', bySrc['bank']||0);
+    setEl('biz-g2b-count',  bySrc['g2b']||0);
     if (s.lastCollected) {
       setEl('biz-last', new Date(s.lastCollected).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));
     }
@@ -731,23 +759,31 @@ function renderBizCards(opps) {
     return;
   }
   wrap.innerHTML = opps.map(o => {
-    const pc = o.priority==='상'?'imp-high':o.priority==='중'?'imp-mid':'imp-low';
-    const pt = o.priority==='상'?'tag-pri-high':o.priority==='중'?'tag-pri-mid':'tag-pri-low';
-    const pl = o.priority==='상'?'우선순위 상':o.priority==='중'?'우선순위 중':'우선순위 하';
+    const pc  = o.priority==='상'?'imp-high':o.priority==='중'?'imp-mid':'imp-low';
+    const pt  = o.priority==='상'?'tag-pri-high':o.priority==='중'?'tag-pri-mid':'tag-pri-low';
+    const pl  = o.priority==='상'?'우선순위 상':o.priority==='중'?'우선순위 중':'우선순위 하';
+    const isG2b = o.src_type === 'g2b';
+    const srcTag = isG2b
+      ? `<span class="tag" style="background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7">🏛️ 나라장터</span>`
+      : `<span class="tag" style="background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE">🏦 ${esc(o.org)}</span>`;
+    const budgetTag = (o.budget && o.budget !== '미공개')
+      ? `<span class="tag" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80">💰 ${esc(o.budget)}</span>`
+      : '';
     return `<div class="a-card ${pc}" onclick="openBizModal(${JSON.stringify(o).replace(/"/g,'&quot;')})" style="cursor:pointer;">
       <div class="a-stripe"></div>
       <div>
         <div class="a-body">
           <div class="a-tags">
             <span class="tag tag-cat-${o.sol}" style="background:#E6F1FB;color:#185FA5">${SOL_LABELS[o.sol]||o.sol}</span>
-            <span class="tag" style="background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE">🏦 ${esc(o.org)}</span>
+            ${srcTag}
             <span class="tag ${pt}">${pl}</span>
+            ${budgetTag}
           </div>
           <div class="a-title">${esc(o.title||'제목 미확인')}</div>
           <div class="a-summary">${esc(o.summary||'')}</div>
         </div>
         <div class="a-footer">
-          <span>📅 ${esc(o.published_at||'날짜 미확인')}</span>
+          <span>📅 ${esc(o.published_at||o.deadline||'날짜 미확인')}</span>
           <span style="font-size:10px;color:#d1d5db">${o.id}</span>
         </div>
       </div>

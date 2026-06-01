@@ -90,6 +90,7 @@ function toOpportunity(it) {
     summary:      `[사전규격] ${name} | 기관: ${it.orderInsttNm || '-'} | 의견마감: ${it.opninRgstClseDt?.slice(0, 10) || '-'} | SW사업: ${it.swBizObjYn || 'N'}`,
     source:       it.specDocFileUrl1 || 'https://www.g2b.go.kr',
     published_at: it.rcptDt?.slice(0, 10) || null,
+    src_type:     'g2b',
   };
 }
 

@@ -143,7 +143,7 @@ app.post('/api/collect', (req, res) => {
 // ── 사업공고자료 (DB) ─────────────────────────────────────────────────────────
 app.get('/api/biz-opps', (req, res) => {
   try {
-    const opps  = queryBizOpps({ org: req.query.org, sol: req.query.sol, priority: req.query.priority, dateFrom: req.query.date_from, dateTo: req.query.date_to });
+    const opps  = queryBizOpps({ org: req.query.org, sol: req.query.sol, priority: req.query.priority, srcType: req.query.src_type, dateFrom: req.query.date_from, dateTo: req.query.date_to });
     const stats = getBizStats();
     res.json({ stats, opportunities: opps });
   } catch (e) { res.status(500).json({ error: e.message }); }
