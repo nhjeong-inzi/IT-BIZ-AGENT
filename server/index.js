@@ -149,7 +149,7 @@ app.get('/api/biz-opps', (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── 사업공고 수집 트리거 ──────────────────────────────────────────────────────
+// ── 사업공고 수집 트리거 (구글뉴스) ──────────────────────────────────────────
 let bizCollecting = false;
 app.post('/api/collect-biz', (req, res) => {
   if (bizCollecting) return res.json({ status: 'running' });
@@ -160,6 +160,19 @@ app.post('/api/collect-biz', (req, res) => {
     .finally(() => { bizCollecting = false; });
 });
 app.get('/api/collect-biz/status', (_req, res) => res.json({ collecting: bizCollecting }));
+
+// ── 나라장터 수집 트리거 ──────────────────────────────────────────────────────
+let g2bCollecting = false;
+app.post('/api/collect-g2b', (req, res) => {
+  if (g2bCollecting) return res.json({ status: 'running' });
+  g2bCollecting = true;
+  res.json({ status: 'started', hasKey: !!process.env.G2B_SERVICE_KEY });
+  import('../src/collect-g2b.js').then(m => m.main())
+    .catch(e => console.error('collect-g2b error:', e))
+    .finally(() => { g2bCollecting = false; });
+});
+app.get('/api/collect-g2b/status', (_req, res) =>
+  res.json({ collecting: g2bCollecting, hasKey: !!process.env.G2B_SERVICE_KEY }));
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;

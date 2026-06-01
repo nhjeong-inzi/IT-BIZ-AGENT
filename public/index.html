@@ -401,8 +401,9 @@ header {
           <div class="stat-card sc-high"><div class="sc-label">우선순위 상</div><div class="sc-val" id="biz-high">-</div><div class="sc-sub">즉시 검토</div></div>
           <div class="stat-card sc-mid"><div class="sc-label">우선순위 중</div><div class="sc-val" id="biz-mid">-</div><div class="sc-sub">검토 권장</div></div>
           <div class="stat-card sc-today"><div class="sc-label">마지막 수집</div><div class="sc-val" style="font-size:13px;padding-top:4px" id="biz-last">-</div><div class="sc-sub" id="biz-last-date"></div></div>
-          <div class="stat-card" style="display:flex;align-items:center;justify-content:center;">
-            <button id="biz-collect-btn" onclick="triggerBizCollect()" style="padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔍 지금 수집</button>
+          <div class="stat-card" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+            <button id="biz-collect-btn" onclick="triggerBizCollect()" style="padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔍 뉴스 수집</button>
+            <button id="g2b-collect-btn" onclick="triggerG2BCollect()" style="padding:8px 14px;background:#0F6E56;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🏛️ 나라장터</button>
           </div>
         </div>
 
@@ -764,13 +765,40 @@ async function triggerBizCollect() {
       const s = await api('/api/collect-biz/status');
       if (!s.collecting) {
         clearInterval(bizPollTimer);
-        btn.disabled = false; btn.textContent = '🔍 지금 수집';
+        btn.disabled = false; btn.textContent = '🔍 뉴스 수집';
         showToast('수집 완료!', 'success');
         setTimeout(() => loadBizOpps(), 600);
       }
     }, 4000);
   } catch(e) {
-    btn.disabled = false; btn.textContent = '🔍 지금 수집';
+    btn.disabled = false; btn.textContent = '🔍 뉴스 수집';
+    showToast('수집 실패: ' + e.message, 'error');
+  }
+}
+
+async function triggerG2BCollect() {
+  const btn = document.getElementById('g2b-collect-btn');
+  // API 키 확인
+  const status = await api('/api/collect-g2b/status').catch(() => ({ hasKey: false }));
+  if (!status.hasKey) {
+    showToast('❌ G2B_SERVICE_KEY 미설정 — .env에 공공데이터포털 인증키를 추가하세요.', 'error');
+    return;
+  }
+  btn.disabled = true; btn.textContent = '⏳ 수집 중...';
+  showToast('나라장터 사전규격·입찰공고·발주목록 수집을 시작합니다.', 'info');
+  try {
+    await fetch('/api/collect-g2b', { method: 'POST' });
+    const t = setInterval(async () => {
+      const s = await api('/api/collect-g2b/status');
+      if (!s.collecting) {
+        clearInterval(t);
+        btn.disabled = false; btn.textContent = '🏛️ 나라장터';
+        showToast('나라장터 수집 완료!', 'success');
+        setTimeout(() => loadBizOpps(), 600);
+      }
+    }, 4000);
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '🏛️ 나라장터';
     showToast('수집 실패: ' + e.message, 'error');
   }
 }

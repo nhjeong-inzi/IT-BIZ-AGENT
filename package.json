@@ -6,6 +6,7 @@
   "scripts": {
     "collect": "node --env-file=.env src/collector.js",
     "collect-biz": "node --env-file=.env src/collect-biz.js",
+    "collect-g2b": "node --env-file=.env src/collect-g2b.js",
     "serve":   "node --env-file=.env server/index.js",
     "dev":     "node --env-file=.env server/index.js"
   },
