@@ -1,0 +1,18 @@
+{
+  "name": "it-biz-agent",
+  "version": "1.0.0",
+  "description": "금융기관 신사업 동향 뉴스 탐색 에이전트",
+  "type": "module",
+  "scripts": {
+    "collect": "node --env-file=.env src/collector.js",
+    "collect-biz": "node --env-file=.env src/collect-biz.js",
+    "serve":   "node --env-file=.env server/index.js",
+    "dev":     "node --env-file=.env server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

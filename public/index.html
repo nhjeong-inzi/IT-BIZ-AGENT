@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IT-BIZ-AGENT | 금융 신사업 동향</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:   #0f3460;
+  --blue:   #185FA5;
+  --blue-lt:#E6F1FB;
+  --red:    #DC2626;
+  --amber:  #B45309;
+  --green:  #0F6E56;
+  --ink:    #111827;
+  --body:   #374151;
+  --muted:  #6b7280;
+  --border: #e5e7eb;
+  --bg:     #f3f4f6;
+  --card:   #ffffff;
+  --radius: 10px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+/* ── Header ── */
+header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+  height: 54px; padding: 0 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.hd-left { display: flex; align-items: center; gap: 10px; }
+.hd-logo { width: 28px; height: 28px; background: rgba(255,255,255,.18); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.hd-logo svg { width: 16px; height: 16px; fill: white; }
+.hd-title { font-size: 14px; font-weight: 700; color: #fff; }
+.hd-sub   { font-size: 11px; color: rgba(255,255,255,.6); }
+.hd-right { display: flex; align-items: center; gap: 10px; }
+.hd-lastrun { font-size: 11px; color: rgba(255,255,255,.65); text-align: right; line-height: 1.5; }
+#collect-btn {
+  padding: 5px 12px; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+  color: #fff; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: background .15s;
+}
+#collect-btn:hover { background: rgba(255,255,255,.25); }
+#collect-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Root layout ── */
+.root-layout {
+  display: flex;
+  min-height: calc(100vh - 54px);
+}
+
+/* ── Nav bar (leftmost) ── */
+.nav-bar {
+  width: 72px; flex-shrink: 0;
+  background: #0d2847;
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 8px;
+  position: sticky; top: 54px; height: calc(100vh - 54px); overflow: hidden;
+}
+.nav-item {
+  width: 100%; padding: 14px 4px 10px;
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; border-left: 3px solid transparent;
+  color: rgba(255,255,255,.45); transition: all .15s; text-align: center;
+  user-select: none;
+}
+.nav-item:hover { color: rgba(255,255,255,.85); background: rgba(255,255,255,.05); }
+.nav-item.active { border-left-color: #60a5fa; color: white; background: rgba(255,255,255,.08); }
+.nav-icon  { font-size: 20px; margin-bottom: 5px; line-height: 1; }
+.nav-label { font-size: 9.5px; font-weight: 600; line-height: 1.3; letter-spacing: -.2px; }
+
+/* ── Section area ── */
+.section-area { flex: 1; display: flex; min-width: 0; }
+.section { display: none; flex: 1; min-width: 0; }
+.section.active { display: flex; }
+
+/* ── Date Sidebar (기사자료) ── */
+.sidebar {
+  width: 196px; flex-shrink: 0;
+  background: var(--card); border-right: 1px solid var(--border);
+  position: sticky; top: 54px; height: calc(100vh - 54px); overflow-y: auto;
+  padding: 14px 0;
+}
+.sb-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; padding: 0 14px 8px; }
+.sb-all {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 14px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ink);
+  border-left: 3px solid transparent; transition: all .15s;
+}
+.sb-all:hover { background: var(--bg); }
+.sb-all.active { border-left-color: var(--blue); background: var(--blue-lt); color: var(--blue); }
+.sb-month-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 14px; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--navy);
+  transition: background .12s; margin-top: 4px;
+}
+.sb-month-hd:hover { background: var(--bg); }
+.sb-month-hd .arrow { font-size: 9px; color: var(--muted); transition: transform .2s; }
+.sb-month-hd.open .arrow { transform: rotate(90deg); }
+.sb-days { display: none; }
+.sb-days.open { display: block; }
+.sb-day {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 14px 4px 26px; cursor: pointer; font-size: 11px; color: var(--body);
+  border-left: 3px solid transparent; transition: all .12s;
+}
+.sb-day:hover { background: var(--bg); }
+.sb-day.active { border-left-color: var(--blue); background: var(--blue-lt); color: var(--blue); font-weight: 600; }
+.sb-day-count { font-size: 10px; color: var(--muted); background: var(--bg); padding: 1px 5px; border-radius: 10px; }
+.sb-day.active .sb-day-count { background: rgba(24,95,165,.12); color: var(--blue); }
+
+/* ── Main content ── */
+.main-content { flex: 1; min-width: 0; padding: 18px 22px 60px; }
+
+/* ── Stats ── */
+.stats { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 16px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; transition: box-shadow .15s; }
+.stat-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.07); }
+.sc-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+.sc-val   { font-size: 28px; font-weight: 800; line-height: 1; }
+.sc-sub   { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+.sc-total .sc-val { color: var(--blue); }
+.sc-today .sc-val { color: var(--green); }
+.sc-high  .sc-val { color: var(--red); }
+.sc-mid   .sc-val { color: var(--amber); }
+.sc-low   .sc-val { color: var(--muted); }
+
+/* ── Toolbar ── */
+.toolbar {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px;
+}
+.toolbar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.search-wrap { flex: 1; min-width: 180px; position: relative; }
+.search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+#search-input {
+  width: 100%; padding: 7px 9px 7px 30px; border: 1px solid var(--border); border-radius: 7px;
+  font-size: 13px; font-family: inherit; outline: none; transition: border-color .15s;
+}
+#search-input:focus { border-color: var(--blue); }
+.filter-group { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.filter-label { font-size: 11px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.filter-btn {
+  padding: 4px 11px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--card); font-size: 12px; font-weight: 500; cursor: pointer;
+  color: var(--muted); transition: all .15s; font-family: inherit;
+}
+.filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+.filter-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.date-input { padding: 4px 8px; border: 1px solid var(--border); border-radius: 7px; font-size: 12px; font-family: inherit; color: var(--ink); cursor: pointer; }
+.date-input:focus { border-color: var(--blue); outline: none; }
+.view-toggle { display: flex; gap: 3px; margin-left: auto; }
+.view-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); cursor: pointer; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.view-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.cat-tabs { display: flex; gap: 5px; flex-wrap: wrap; }
+.cat-btn {
+  padding: 4px 11px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--card); font-size: 12px; cursor: pointer; color: var(--body);
+  transition: all .15s; font-family: inherit; display: flex; align-items: center; gap: 3px;
+}
+.cat-btn:hover { border-color: var(--blue); color: var(--blue); }
+.cat-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.cat-count { font-size: 10px; opacity: .75; }
+
+/* ── Result meta ── */
+.result-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 12px; color: var(--muted); }
+
+/* ── Cards grid ── */
+#cards-wrap.grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+#cards-wrap.list { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── Article card ── */
+.a-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; transition: box-shadow .15s, transform .15s; cursor: pointer;
+  display: grid; grid-template-columns: 4px 1fr;
+}
+.a-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.09); transform: translateY(-2px); }
+.a-stripe { }
+.imp-high .a-stripe { background: var(--red); }
+.imp-mid  .a-stripe { background: var(--amber); }
+.imp-low  .a-stripe { background: var(--muted); }
+.a-body { padding: 13px 14px; }
+.a-tags { display: flex; gap: 4px; margin-bottom: 7px; flex-wrap: wrap; }
+.tag { display: inline-block; padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+/* 기사자료 카테고리 */
+.tag-cat-ocr     { background:#E1F5EE; color:#0F6E56; }
+.tag-cat-image   { background:#E6F1FB; color:#185FA5; }
+.tag-cat-rpa     { background:#EEF2FF; color:#4338CA; }
+.tag-cat-id      { background:#F5F3FF; color:#7C3AED; }
+.tag-cat-digital { background:#FAEEDA; color:#B45309; }
+/* 사업공고 솔루션 */
+.tag-sol-image   { background:#E6F1FB; color:#185FA5; }
+.tag-sol-ecm     { background:#EEEDFE; color:#3C3489; }
+.tag-sol-ocr     { background:#E1F5EE; color:#0F6E56; }
+.tag-sol-digital { background:#FAECE7; color:#993C1D; }
+.tag-sol-eform   { background:#FBEAF0; color:#993556; }
+.tag-sol-loan    { background:#FAEEDA; color:#633806; }
+.tag-sol-rpa     { background:#EAF3DE; color:#3B6D11; }
+.tag-sol-id      { background:#F1EFE8; color:#444441; }
+/* 중요도 / 우선순위 */
+.tag-imp-high { background:#FEF2F2; color:var(--red);   border:1px solid #FECACA; }
+.tag-imp-mid  { background:#FFFBEB; color:var(--amber); border:1px solid #FDE68A; }
+.tag-imp-low  { background:#F9FAFB; color:var(--muted); border:1px solid #E5E7EB; }
+.tag-pri-high { background:#FEF2F2; color:#791F1F;  border:1px solid #F7C1C1; }
+.tag-pri-mid  { background:#FAEEDA; color:#633806;  border:1px solid #FAC775; }
+.tag-pri-low  { background:#ECFDF5; color:#0F6E56;  border:1px solid #9FE1CB; }
+
+.a-title   { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.45; margin-bottom: 6px; }
+.a-media   { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+.a-summary { font-size: 12px; color: var(--body); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.a-footer  { padding: 8px 14px; border-top: 1px solid var(--border); background: #fafafa; font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
+
+/* List view */
+#cards-wrap.list .a-card { grid-template-columns: 4px 1fr; }
+#cards-wrap.list .a-body { display: flex; gap: 12px; align-items: flex-start; }
+#cards-wrap.list .a-main { flex: 1; }
+#cards-wrap.list .a-summary { -webkit-line-clamp: 2; }
+#cards-wrap.list .a-footer { width: 150px; flex-direction: column; align-items: flex-end; border-top: none; border-left: 1px solid var(--border); }
+
+/* ── 사업공고 section header ── */
+.biz-header { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 14px; }
+.biz-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.biz-title  { font-size: 15px; font-weight: 700; color: var(--navy); }
+.biz-date   { font-size: 11px; color: var(--muted); }
+.biz-stats  { display: flex; gap: 16px; }
+.biz-stat   { text-align: center; }
+.biz-stat-val   { font-size: 22px; font-weight: 800; }
+.biz-stat-label { font-size: 10px; color: var(--muted); }
+.biz-stat-total .biz-stat-val { color: var(--blue); }
+.biz-stat-high  .biz-stat-val { color: var(--red); }
+.biz-stat-mid   .biz-stat-val { color: var(--amber); }
+.biz-filter-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+
+/* ── Biz cards ── */
+#biz-cards.grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+#biz-cards.list { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── Pagination ── */
+.pagination { display: flex; justify-content: center; gap: 4px; margin-top: 20px; }
+.pg-btn { min-width: 30px; height: 30px; padding: 0 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); font-size: 13px; cursor: pointer; font-family: inherit; color: var(--ink); display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.pg-btn:hover { border-color: var(--blue); color: var(--blue); }
+.pg-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.pg-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Empty / Loading ── */
+.empty, .loading-msg { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--muted); font-size: 13px; }
+.spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Modal ── */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--card); border-radius: 14px; width: 100%; max-width: 700px; box-shadow: 0 24px 64px rgba(0,0,0,.2); position: relative; }
+.modal-header { padding: 22px 26px 14px; border-bottom: 1px solid var(--border); }
+.modal-close { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border: none; background: var(--bg); border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.modal-close:hover { background: var(--border); }
+.modal-tags  { display: flex; gap: 6px; margin-bottom: 9px; }
+.modal-title { font-size: 17px; font-weight: 700; color: var(--ink); line-height: 1.45; margin-bottom: 9px; }
+.modal-meta  { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 12px; }
+.modal-body  { padding: 18px 26px; }
+.modal-section-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 7px; }
+.modal-summary-box { font-size: 14px; color: var(--body); line-height: 1.8; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; white-space: pre-line; }
+.modal-content-box { font-size: 13px; color: var(--body); line-height: 1.85; border-top: 1px solid var(--border); padding-top: 14px; white-space: pre-line; max-height: 380px; overflow-y: auto; }
+.modal-content-loading { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; padding: 10px 0; }
+.modal-footer { padding: 14px 26px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-link { display: inline-flex; align-items: center; gap: 5px; padding: 7px 16px; background: var(--blue); color: #fff; border-radius: 7px; font-size: 13px; font-weight: 600; text-decoration: none; }
+.modal-link:hover { background: var(--navy); }
+.modal-fetch-btn { padding: 6px 13px; border: 1px solid var(--border); background: var(--card); border-radius: 7px; font-size: 12px; cursor: pointer; font-family: inherit; color: var(--body); transition: all .15s; }
+.modal-fetch-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ── Toast ── */
+.toast { position: fixed; bottom: 22px; right: 22px; z-index: 300; padding: 11px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,.15); transform: translateY(100px); opacity: 0; transition: all .3s; pointer-events: none; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--green); color: #fff; }
+.toast.error   { background: var(--red); color: #fff; }
+.toast.info    { background: var(--navy); color: #fff; }
+
+@media (max-width: 1100px) { .stats { grid-template-columns: repeat(3,1fr); } #cards-wrap.grid, #biz-cards.grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 700px)  { .sidebar { display: none; } .main-content { padding: 12px; } .stats { grid-template-columns: repeat(2,1fr); } #cards-wrap.grid, #biz-cards.grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="hd-left">
+    <div class="hd-logo"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+    <div>
+      <div class="hd-title">IT-BIZ-AGENT</div>
+      <div class="hd-sub">인지소프트 사업 인텔리전스</div>
+    </div>
+  </div>
+  <div class="hd-right">
+    <div class="hd-lastrun"><div id="last-run-label">마지막 수집</div><div id="last-run-time" style="color:rgba(255,255,255,.9)">-</div></div>
+    <button id="collect-btn" onclick="triggerCollect()">🔍 수집</button>
+  </div>
+</header>
+
+<div class="root-layout">
+
+  <!-- ① Nav bar -->
+  <nav class="nav-bar">
+    <div class="nav-item active" id="nav-news" onclick="switchSection('news')">
+      <div class="nav-icon">📰</div>
+      <div class="nav-label">기사<br>자료</div>
+    </div>
+    <div class="nav-item" id="nav-biz" onclick="switchSection('biz')">
+      <div class="nav-icon">📋</div>
+      <div class="nav-label">사업공고<br>자료</div>
+    </div>
+  </nav>
+
+  <div class="section-area">
+
+    <!-- ② 기사자료 섹션 -->
+    <div class="section active" id="section-news">
+      <aside class="sidebar" id="sidebar">
+        <div class="sb-title">📅 날짜별 보기</div>
+        <div class="sb-all active" id="sb-all" onclick="sbSelectAll()">
+          전체 기사 <span id="sb-all-count"></span>
+        </div>
+        <div id="sb-tree"></div>
+      </aside>
+
+      <div class="main-content">
+        <div class="stats">
+          <div class="stat-card sc-total"><div class="sc-label">전체 기사</div><div class="sc-val" id="s-total">-</div><div class="sc-sub">누적</div></div>
+          <div class="stat-card sc-today"><div class="sc-label">오늘 수집</div><div class="sc-val" id="s-today">-</div><div class="sc-sub" id="s-today-date">-</div></div>
+          <div class="stat-card sc-high"><div class="sc-label">중요도 상</div><div class="sc-val" id="s-high">-</div><div class="sc-sub">즉시 검토</div></div>
+          <div class="stat-card sc-mid"><div class="sc-label">중요도 중</div><div class="sc-val" id="s-mid">-</div><div class="sc-sub">검토 권장</div></div>
+          <div class="stat-card sc-low"><div class="sc-label">중요도 하</div><div class="sc-val" id="s-low">-</div><div class="sc-sub">참고용</div></div>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-row">
+            <div class="search-wrap">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+              <input type="text" id="search-input" placeholder="기사 검색..." oninput="debounceSearch()">
+            </div>
+            <div class="filter-group">
+              <span class="filter-label">기간</span>
+              <input type="date" class="date-input" id="date-from" onchange="applyFilters()">
+              <span style="color:var(--muted);font-size:12px">~</span>
+              <input type="date" class="date-input" id="date-to" onchange="applyFilters()">
+            </div>
+            <div class="filter-group">
+              <span class="filter-label">중요도</span>
+              <button class="filter-btn active" data-imp="all" onclick="setImp('all',this)">전체</button>
+              <button class="filter-btn" data-imp="상" onclick="setImp('상',this)" style="color:var(--red)">상</button>
+              <button class="filter-btn" data-imp="중" onclick="setImp('중',this)" style="color:var(--amber)">중</button>
+              <button class="filter-btn" data-imp="하" onclick="setImp('하',this)">하</button>
+            </div>
+            <div class="view-toggle">
+              <button class="view-btn active" id="grid-btn" title="카드" onclick="setView('grid')">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="0" y="0" width="7" height="7" rx="1"/><rect x="9" y="0" width="7" height="7" rx="1"/><rect x="0" y="9" width="7" height="7" rx="1"/><rect x="9" y="9" width="7" height="7" rx="1"/></svg>
+              </button>
+              <button class="view-btn" id="list-btn" title="목록" onclick="setView('list')">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="0" y="1" width="16" height="2" rx="1"/><rect x="0" y="7" width="16" height="2" rx="1"/><rect x="0" y="13" width="16" height="2" rx="1"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="toolbar-row">
+            <div class="cat-tabs">
+              <button class="cat-btn active" data-cat="all"     onclick="setCat('all',this)">전체 <span class="cat-count" id="cc-all"></span></button>
+              <button class="cat-btn" data-cat="ocr"            onclick="setCat('ocr',this)">🔍 AI OCR <span class="cat-count" id="cc-ocr"></span></button>
+              <button class="cat-btn" data-cat="image"          onclick="setCat('image',this)">🖼️ 이미지시스템 <span class="cat-count" id="cc-image"></span></button>
+              <button class="cat-btn" data-cat="rpa"            onclick="setCat('rpa',this)">🤖 RPA <span class="cat-count" id="cc-rpa"></span></button>
+              <button class="cat-btn" data-cat="id"             onclick="setCat('id',this)">🪪 신분증인식 <span class="cat-count" id="cc-id"></span></button>
+              <button class="cat-btn" data-cat="digital"        onclick="setCat('digital',this)">🏦 디지털창구 <span class="cat-count" id="cc-digital"></span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-meta">
+          <span id="result-count">-</span>
+          <span id="result-range"></span>
+        </div>
+        <div id="cards-wrap" class="grid"></div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div><!-- /section-news -->
+
+    <!-- ③ 사업공고자료 섹션 -->
+    <div class="section" id="section-biz">
+      <aside class="sidebar" id="biz-sidebar">
+        <div class="sb-title">📅 날짜별 보기</div>
+        <div class="sb-all active" id="biz-sb-all" onclick="bizSbSelectAll()">
+          전체 공고 <span id="biz-sb-all-count"></span>
+        </div>
+        <div id="biz-sb-tree"></div>
+      </aside>
+      <div class="main-content">
+
+        <!-- 통계 스트립 -->
+        <div class="stats" style="margin-bottom:14px;">
+          <div class="stat-card sc-total"><div class="sc-label">전체 공고</div><div class="sc-val" id="biz-total">-</div><div class="sc-sub">누적</div></div>
+          <div class="stat-card sc-high"><div class="sc-label">우선순위 상</div><div class="sc-val" id="biz-high">-</div><div class="sc-sub">즉시 검토</div></div>
+          <div class="stat-card sc-mid"><div class="sc-label">우선순위 중</div><div class="sc-val" id="biz-mid">-</div><div class="sc-sub">검토 권장</div></div>
+          <div class="stat-card sc-today"><div class="sc-label">마지막 수집</div><div class="sc-val" style="font-size:13px;padding-top:4px" id="biz-last">-</div><div class="sc-sub" id="biz-last-date"></div></div>
+          <div class="stat-card" style="display:flex;align-items:center;justify-content:center;">
+            <button id="biz-collect-btn" onclick="triggerBizCollect()" style="padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔍 지금 수집</button>
+          </div>
+        </div>
+
+        <!-- 필터 툴바 -->
+        <div class="toolbar" style="margin-bottom:14px;">
+          <div class="toolbar-row">
+            <span class="filter-label">은행</span>
+            <button class="filter-btn active" data-borg="all"    onclick="setBizOrg('all',this)">전체</button>
+            <button class="filter-btn" data-borg="우리은행"       onclick="setBizOrg('우리은행',this)">🏦 우리은행</button>
+            <button class="filter-btn" data-borg="KB국민은행"     onclick="setBizOrg('KB국민은행',this)">🏦 KB국민은행</button>
+            <button class="filter-btn" data-borg="하나은행"       onclick="setBizOrg('하나은행',this)">🏦 하나은행</button>
+            <button class="filter-btn" data-borg="신한은행"       onclick="setBizOrg('신한은행',this)">🏦 신한은행</button>
+            <button class="filter-btn" data-borg="NH농협은행"     onclick="setBizOrg('NH농협은행',this)">🏦 NH농협은행</button>
+          </div>
+          <div class="toolbar-row">
+            <span class="filter-label">솔루션</span>
+            <button class="filter-btn active" data-bsol="all"     onclick="setBizSol('all',this)">전체</button>
+            <button class="filter-btn" data-bsol="ocr"            onclick="setBizSol('ocr',this)">🔍 AI OCR</button>
+            <button class="filter-btn" data-bsol="image"          onclick="setBizSol('image',this)">🖼️ 이미지시스템</button>
+            <button class="filter-btn" data-bsol="rpa"            onclick="setBizSol('rpa',this)">🤖 RPA</button>
+            <button class="filter-btn" data-bsol="id"             onclick="setBizSol('id',this)">🪪 신분증인식</button>
+            <button class="filter-btn" data-bsol="digital"        onclick="setBizSol('digital',this)">🏦 디지털창구</button>
+          </div>
+        </div>
+
+        <div class="result-meta"><span id="biz-result-count">-</span></div>
+        <div id="biz-cards" class="grid"></div>
+      </div>
+    </div><!-- /section-biz -->
+
+  </div><!-- /section-area -->
+</div><!-- /root-layout -->
+
+<!-- Modal (공통) -->
+<div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-header">
+      <div class="modal-tags"  id="modal-tags"></div>
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-meta"  id="modal-meta"></div>
+    </div>
+    <div class="modal-body">
+      <div id="modal-summary-section">
+        <div class="modal-section-label">요약</div>
+        <div class="modal-summary-box" id="modal-summary"></div>
+      </div>
+      <div id="modal-content-wrap"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-fetch-btn" id="modal-fetch-btn" onclick="loadFullContent()">📄 기사 전문 불러오기</button>
+      <a class="modal-link" id="modal-link" href="#" target="_blank" rel="noopener">원문 보기 →</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Section switching ─────────────────────────────────────────────────────────
+function switchSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+
+  // 헤더 버튼 가시성
+  document.getElementById('collect-btn').style.display = name === 'news' ? '' : 'none';
+  document.getElementById('last-run-label').style.display = name === 'news' ? '' : 'none';
+  document.getElementById('last-run-time').style.display  = name === 'news' ? '' : 'none';
+
+  if (name === 'biz' && !bizLoaded) loadBizOpps();
+}
+
+// ══════════════════════════════════════════════════════
+// 기사자료 섹션
+// ══════════════════════════════════════════════════════
+const state = { q:'', cat:'all', imp:'all', dateFrom:'', dateTo:'', page:1, view:'grid' };
+let searchTimer = null;
+let collectPollTimer = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('date-to').value = today;
+  state.dateTo = today;
+  loadStats();
+  loadArticles();
+});
+
+async function api(path) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ── Sidebar ───────────────────────────────────────────
+function renderSidebar(dates, total) {
+  document.getElementById('sb-all-count').textContent = total;
+  const months = {};
+  for (const { d, c } of dates) {
+    const ym = d.slice(0,7);
+    if (!months[ym]) months[ym] = [];
+    months[ym].push({ d, c });
+  }
+  const tree = document.getElementById('sb-tree');
+  tree.innerHTML = Object.entries(months).map(([ym, days]) => {
+    const [y, m] = ym.split('-');
+    const total  = days.reduce((s,x) => s + x.c, 0);
+    const isCur  = ym === new Date().toISOString().slice(0,7);
+    return `<div class="sb-month">
+      <div class="sb-month-hd ${isCur?'open':''}" onclick="sbToggleMonth(this)">
+        <span>${y}년 ${+m}월 <span style="font-size:10px;font-weight:400;color:var(--muted)">(${total})</span></span>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="sb-days ${isCur?'open':''}">
+        ${days.map(({d,c}) => `<div class="sb-day" data-date="${d}" onclick="sbSelectDate('${d}',this)">${+m}월 ${+d.slice(8)}일<span class="sb-day-count">${c}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function sbToggleMonth(hd) { hd.classList.toggle('open'); hd.nextElementSibling.classList.toggle('open'); }
+function sbSelectAll() {
+  state.dateFrom=''; state.dateTo=''; state.page=1;
+  document.getElementById('date-from').value=''; document.getElementById('date-to').value='';
+  document.getElementById('sb-all').classList.add('active');
+  document.querySelectorAll('.sb-day').forEach(e=>e.classList.remove('active'));
+  loadArticles();
+}
+function sbSelectDate(date, el) {
+  state.dateFrom=date; state.dateTo=date; state.page=1;
+  document.getElementById('date-from').value=date; document.getElementById('date-to').value=date;
+  document.getElementById('sb-all').classList.remove('active');
+  document.querySelectorAll('.sb-day').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  loadArticles();
+}
+
+// ── Stats ─────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const s = await api('/api/stats');
+    document.getElementById('s-total').textContent = s.total;
+    document.getElementById('s-today').textContent = s.today;
+    document.getElementById('s-today-date').textContent = new Date().toLocaleDateString('ko-KR');
+    const imp = Object.fromEntries((s.byImp||[]).map(r=>[r.importance,r.c]));
+    document.getElementById('s-high').textContent = imp['상']||0;
+    document.getElementById('s-mid').textContent  = imp['중']||0;
+    document.getElementById('s-low').textContent  = imp['하']||0;
+    if (s.lastRunAt) document.getElementById('last-run-time').textContent =
+      new Date(s.lastRunAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    if (s.dates?.length) renderSidebar(s.dates, s.total);
+    const catMap = Object.fromEntries((s.byCat||[]).map(r=>[r.category,r.c]));
+    setEl('cc-all', s.total ? `(${s.total})` : '');
+    ['ocr','image','rpa','id','digital'].forEach(k => setEl(`cc-${k}`, catMap[k]?`(${catMap[k]})`:'' ));
+  } catch(e) { console.warn('stats', e); }
+}
+
+// ── Articles ──────────────────────────────────────────
+async function loadArticles() {
+  document.getElementById('cards-wrap').innerHTML = `<div class="loading-msg"><div class="spinner"></div>불러오는 중...</div>`;
+  const p = new URLSearchParams();
+  if (state.q)       p.set('q', state.q);
+  if (state.cat !== 'all') p.set('category', state.cat);
+  if (state.imp !== 'all') p.set('importance', state.imp);
+  if (state.dateFrom) p.set('date_from', state.dateFrom);
+  if (state.dateTo)   p.set('date_to',   state.dateTo);
+  p.set('page', state.page); p.set('limit', '24');
+  try {
+    const data = await api(`/api/articles?${p}`);
+    renderArticles(data); renderPagination(data);
+    setEl('result-count', `${data.total.toLocaleString()}건`);
+    setEl('result-range', data.total > 0 ? `${(state.page-1)*24+1}–${Math.min(state.page*24, data.total)}` : '');
+  } catch(e) {
+    document.getElementById('cards-wrap').innerHTML = `<div class="empty">⚠️ ${e.message}</div>`;
+  }
+}
+
+const CAT_LABELS = { ocr:'AI OCR', image:'이미지시스템', rpa:'RPA', id:'신분증인식', digital:'디지털창구' };
+
+function renderArticles(data) {
+  const wrap = document.getElementById('cards-wrap');
+  if (!data.articles.length) { wrap.innerHTML = `<div class="empty">📰 해당 조건의 기사가 없습니다.</div>`; return; }
+  wrap.innerHTML = data.articles.map(a => {
+    const ic = a.importance==='상'?'imp-high':a.importance==='중'?'imp-mid':'imp-low';
+    const it = a.importance==='상'?'tag-imp-high':a.importance==='중'?'tag-imp-mid':'tag-imp-low';
+    const il = a.importance==='상'?'중요도 상':a.importance==='중'?'중요도 중':'중요도 하';
+    const date = a.published_at || a.collected_at?.slice(0,10) || '';
+    return `<div class="a-card ${ic}" onclick="openModal(${a.id})" style="cursor:pointer;">
+      <div class="a-stripe"></div>
+      <div>
+        <div class="a-body">
+          <div class="a-tags">
+            <span class="tag tag-cat-${a.category}">${CAT_LABELS[a.category]||a.category}</span>
+            <span class="tag ${it}">${il}</span>
+          </div>
+          <div class="a-title">${esc(a.title)}</div>
+          <div class="a-media">📰 ${esc(a.media||'-')}</div>
+          <div class="a-summary">${esc(a.summary||'')}</div>
+        </div>
+        <div class="a-footer"><span>📅 ${date}</span><span style="font-size:10px;color:#d1d5db">${a.id}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPagination(data) {
+  const pg = document.getElementById('pagination');
+  if (data.pages <= 1) { pg.innerHTML=''; return; }
+  const cur=data.page, max=data.pages, pages=[];
+  pages.push(1);
+  if (cur>3) pages.push('...');
+  for (let i=Math.max(2,cur-1);i<=Math.min(max-1,cur+1);i++) pages.push(i);
+  if (cur<max-2) pages.push('...');
+  if (max>1) pages.push(max);
+  pg.innerHTML = [`<button class="pg-btn" ${cur===1?'disabled':''} onclick="goPage(${cur-1})">‹</button>`,
+    ...pages.map(p=>p==='...'?`<span class="pg-btn" style="cursor:default">…</span>`:`<button class="pg-btn ${p===cur?'active':''}" onclick="goPage(${p})">${p}</button>`),
+    `<button class="pg-btn" ${cur===max?'disabled':''} onclick="goPage(${cur+1})">›</button>`
+  ].join('');
+}
+
+function debounceSearch() { clearTimeout(searchTimer); searchTimer=setTimeout(()=>{state.q=document.getElementById('search-input').value.trim();state.page=1;loadArticles();},300); }
+function setCat(cat,btn) { state.cat=cat;state.page=1; document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); loadArticles(); }
+function setImp(imp,btn) { state.imp=imp;state.page=1; document.querySelectorAll('[data-imp]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); loadArticles(); }
+function applyFilters() { state.dateFrom=document.getElementById('date-from').value; state.dateTo=document.getElementById('date-to').value; state.page=1; loadArticles(); }
+function setView(v) { state.view=v; document.getElementById('cards-wrap').className=v; document.getElementById('grid-btn').classList.toggle('active',v==='grid'); document.getElementById('list-btn').classList.toggle('active',v==='list'); }
+function goPage(p) { state.page=p; loadArticles(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+// ══════════════════════════════════════════════════════
+// 사업공고자료 섹션
+// ══════════════════════════════════════════════════════
+let bizLoaded = false;
+let bizOrgFilter = 'all';
+let bizSolFilter = 'all';
+let bizDateFrom  = '';
+let bizDateTo    = '';
+let bizPollTimer = null;
+
+// ── Biz Sidebar ───────────────────────────────────────
+function renderBizSidebar(dates, total) {
+  document.getElementById('biz-sb-all-count').textContent = total;
+  const months = {};
+  for (const { d, c } of dates) {
+    const ym = d.slice(0, 7);
+    if (!months[ym]) months[ym] = [];
+    months[ym].push({ d, c });
+  }
+  const tree = document.getElementById('biz-sb-tree');
+  tree.innerHTML = Object.entries(months).map(([ym, days]) => {
+    const [y, m] = ym.split('-');
+    const tot    = days.reduce((s, x) => s + x.c, 0);
+    const isCur  = ym === new Date().toISOString().slice(0, 7);
+    return `<div class="sb-month">
+      <div class="sb-month-hd ${isCur ? 'open' : ''}" onclick="sbToggleMonth(this)">
+        <span>${y}년 ${+m}월 <span style="font-size:10px;font-weight:400;color:var(--muted)">(${tot})</span></span>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="sb-days ${isCur ? 'open' : ''}">
+        ${days.map(({ d, c }) => `<div class="sb-day" data-biz-date="${d}" onclick="bizSbSelectDate('${d}',this)">${+m}월 ${+d.slice(8)}일<span class="sb-day-count">${c}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function bizSbSelectAll() {
+  bizDateFrom = ''; bizDateTo = '';
+  document.getElementById('biz-sb-all').classList.add('active');
+  document.querySelectorAll('[data-biz-date]').forEach(e => e.classList.remove('active'));
+  loadBizOpps();
+}
+
+function bizSbSelectDate(date, el) {
+  bizDateFrom = date; bizDateTo = date;
+  document.getElementById('biz-sb-all').classList.remove('active');
+  document.querySelectorAll('[data-biz-date]').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  loadBizOpps();
+}
+
+const SOL_LABELS = { ocr:'AI OCR', image:'이미지시스템', rpa:'RPA', id:'신분증인식', digital:'디지털창구' };
+
+async function loadBizOpps() {
+  document.getElementById('biz-cards').innerHTML = `<div class="loading-msg"><div class="spinner"></div>사업공고 데이터 불러오는 중...</div>`;
+  try {
+    const params = new URLSearchParams();
+    if (bizOrgFilter !== 'all') params.set('org', bizOrgFilter);
+    if (bizSolFilter !== 'all') params.set('sol', bizSolFilter);
+    if (bizDateFrom) params.set('date_from', bizDateFrom);
+    if (bizDateTo)   params.set('date_to',   bizDateTo);
+    const data = await api(`/api/biz-opps?${params}`);
+    bizLoaded = true;
+    const s = data.stats || {};
+    setEl('biz-total', s.total || 0);
+    const byPri = Object.fromEntries((s.byPriority||[]).map(r=>[r.priority,r.c]));
+    setEl('biz-high', byPri['상']||0);
+    setEl('biz-mid',  byPri['중']||0);
+    if (s.lastCollected) {
+      setEl('biz-last', new Date(s.lastCollected).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));
+    }
+    if (s.dates?.length) renderBizSidebar(s.dates, s.total);
+    renderBizCards(data.opportunities || []);
+    setEl('biz-result-count', `${(data.opportunities||[]).length}건`);
+  } catch(e) {
+    document.getElementById('biz-cards').innerHTML = `<div class="empty">⚠️ ${e.message}<br><small>"지금 수집" 버튼으로 데이터를 수집하세요.</small></div>`;
+  }
+}
+
+function setBizOrg(org, btn) {
+  bizOrgFilter = org;
+  document.querySelectorAll('[data-borg]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadBizOpps();
+}
+
+function setBizSol(sol, btn) {
+  bizSolFilter = sol;
+  document.querySelectorAll('[data-bsol]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadBizOpps();
+}
+
+function renderBizCards(opps) {
+  const wrap = document.getElementById('biz-cards');
+  if (!opps.length) {
+    wrap.innerHTML = `<div class="empty">📋 해당 조건의 사업공고가 없습니다.<br><small>수집 버튼을 눌러 데이터를 가져오세요.</small></div>`;
+    return;
+  }
+  wrap.innerHTML = opps.map(o => {
+    const pc = o.priority==='상'?'imp-high':o.priority==='중'?'imp-mid':'imp-low';
+    const pt = o.priority==='상'?'tag-pri-high':o.priority==='중'?'tag-pri-mid':'tag-pri-low';
+    const pl = o.priority==='상'?'우선순위 상':o.priority==='중'?'우선순위 중':'우선순위 하';
+    return `<div class="a-card ${pc}" onclick="openBizModal(${JSON.stringify(o).replace(/"/g,'&quot;')})" style="cursor:pointer;">
+      <div class="a-stripe"></div>
+      <div>
+        <div class="a-body">
+          <div class="a-tags">
+            <span class="tag tag-cat-${o.sol}" style="background:#E6F1FB;color:#185FA5">${SOL_LABELS[o.sol]||o.sol}</span>
+            <span class="tag" style="background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE">🏦 ${esc(o.org)}</span>
+            <span class="tag ${pt}">${pl}</span>
+          </div>
+          <div class="a-title">${esc(o.title||'제목 미확인')}</div>
+          <div class="a-summary">${esc(o.summary||'')}</div>
+        </div>
+        <div class="a-footer">
+          <span>📅 ${esc(o.published_at||'날짜 미확인')}</span>
+          <span style="font-size:10px;color:#d1d5db">${o.id}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function triggerBizCollect() {
+  const btn = document.getElementById('biz-collect-btn');
+  btn.disabled = true; btn.textContent = '⏳ 수집 중...';
+  showToast('5개 은행 사업공고 수집을 시작합니다.', 'info');
+  try {
+    await fetch('/api/collect-biz', { method: 'POST' });
+    bizPollTimer = setInterval(async () => {
+      const s = await api('/api/collect-biz/status');
+      if (!s.collecting) {
+        clearInterval(bizPollTimer);
+        btn.disabled = false; btn.textContent = '🔍 지금 수집';
+        showToast('수집 완료!', 'success');
+        setTimeout(() => loadBizOpps(), 600);
+      }
+    }, 4000);
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '🔍 지금 수집';
+    showToast('수집 실패: ' + e.message, 'error');
+  }
+}
+
+function openBizModal(o) {
+  const pt = o.priority==='상'?'tag-pri-high':o.priority==='중'?'tag-pri-mid':'tag-pri-low';
+  const pl = o.priority==='상'?'우선순위 상':o.priority==='중'?'우선순위 중':'우선순위 하';
+  document.getElementById('modal-tags').innerHTML = `
+    <span class="tag tag-sol-${o.sol}">${SOL_LABELS[o.sol]||o.sol}</span>
+    <span class="tag ${pt}">${pl}</span>`;
+  document.getElementById('modal-title').textContent = o.title || '제목 미확인';
+  document.getElementById('modal-meta').innerHTML = `
+    <span>🏛️ ${esc(o.org||'-')}</span>
+    <span>📅 ${esc(o.deadline||'마감 확인필요')}</span>
+    <span>💰 ${esc(o.budget||'미공개')}</span>`;
+  document.getElementById('modal-summary-section').style.display = '';
+  document.getElementById('modal-summary').textContent = o.summary || '-';
+  document.getElementById('modal-content-wrap').innerHTML = '';
+  document.getElementById('modal-fetch-btn').style.display = 'none';
+  const link = document.getElementById('modal-link');
+  if (o.source && o.source.startsWith('http')) { link.href=o.source; link.style.display='inline-flex'; }
+  else { link.style.display='none'; }
+  document.getElementById('modal-bg').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  currentArticleId = null;
+}
+
+// ══════════════════════════════════════════════════════
+// 기사 모달 (기사자료용)
+// ══════════════════════════════════════════════════════
+let currentArticleId = null;
+
+async function openModal(id) {
+  currentArticleId = id;
+  document.getElementById('modal-title').textContent = '불러오는 중...';
+  document.getElementById('modal-tags').innerHTML = '';
+  document.getElementById('modal-summary-section').style.display = 'none';
+  document.getElementById('modal-content-wrap').innerHTML = '';
+  document.getElementById('modal-fetch-btn').style.display = 'inline-block';
+  document.getElementById('modal-fetch-btn').disabled = false;
+  document.getElementById('modal-fetch-btn').textContent = '📄 기사 전문 불러오기';
+  document.getElementById('modal-bg').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  try {
+    const a = await api(`/api/articles/${id}`);
+    const it = a.importance==='상'?'tag-imp-high':a.importance==='중'?'tag-imp-mid':'tag-imp-low';
+    const il = a.importance==='상'?'중요도 상':a.importance==='중'?'중요도 중':'중요도 하';
+    document.getElementById('modal-tags').innerHTML = `
+      <span class="tag tag-cat-${a.category}">${CAT_LABELS[a.category]||a.category}</span>
+      <span class="tag ${it}">${il}</span>`;
+    document.getElementById('modal-title').textContent = a.title;
+    document.getElementById('modal-meta').innerHTML = `
+      <span>📰 ${esc(a.media||'-')}</span>
+      <span>📅 ${a.published_at||a.collected_at?.slice(0,10)||'-'}</span>
+      <span style="font-size:10px;color:#d1d5db">수집: ${a.collected_at?.slice(0,16)||''}</span>`;
+    const isSameAsTitle = (a.summary||'').replace(/\s+/g,' ').trim() === (a.title||'').replace(/\s+/g,' ').trim();
+    if (!isSameAsTitle && a.summary) {
+      document.getElementById('modal-summary-section').style.display = '';
+      document.getElementById('modal-summary').textContent = a.summary;
+    }
+    const link = document.getElementById('modal-link');
+    if (a.url && !a.url.startsWith('no-url')) { link.href=a.url; link.style.display='inline-flex'; }
+    else link.style.display='none';
+    if (a.content) showContent(a.content, true);
+    else loadFullContent();
+  } catch(e) {
+    document.getElementById('modal-title').textContent = '오류: ' + e.message;
+  }
+}
+
+async function loadFullContent() {
+  if (!currentArticleId) return;
+  const btn = document.getElementById('modal-fetch-btn');
+  btn.disabled = true; btn.textContent = '⏳ 불러오는 중...';
+  document.getElementById('modal-content-wrap').innerHTML =
+    `<div class="modal-content-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div>기사 본문을 가져오는 중...</div>`;
+  try {
+    const data = await api(`/api/articles/${currentArticleId}/content`);
+    showContent(data.content, data.cached);
+    btn.style.display = 'none';
+  } catch(e) {
+    document.getElementById('modal-content-wrap').innerHTML = `<div style="color:var(--red);font-size:12px;padding:8px 0;">본문을 불러올 수 없습니다.</div>`;
+    btn.disabled=false; btn.textContent='📄 기사 전문 불러오기';
+  }
+}
+
+function showContent(content, cached) {
+  const wrap = document.getElementById('modal-content-wrap');
+  if (!content) { wrap.innerHTML=''; return; }
+  const label = document.createElement('div');
+  label.className = 'modal-section-label'; label.style.marginTop = '4px';
+  label.textContent = '기사 본문';
+  if (cached) { const b=document.createElement('span'); b.style.cssText='color:var(--green);font-weight:400;margin-left:4px;'; b.textContent='(캐시됨)'; label.appendChild(b); }
+  const box = document.createElement('div');
+  box.className = 'modal-content-box'; box.textContent = content;
+  wrap.innerHTML=''; wrap.appendChild(label); wrap.appendChild(box);
+  document.getElementById('modal-fetch-btn').style.display='none';
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-bg') && !e?.target?.classList?.contains('modal-close')) return;
+  document.getElementById('modal-bg').classList.remove('open');
+  document.body.style.overflow=''; currentArticleId=null;
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal({}); });
+
+// ══════════════════════════════════════════════════════
+// 수집
+// ══════════════════════════════════════════════════════
+async function triggerCollect() {
+  const btn = document.getElementById('collect-btn');
+  btn.disabled=true; btn.textContent='⏳ 수집 중...';
+  showToast('뉴스 수집을 시작합니다.','info');
+  try {
+    await fetch('/api/collect',{method:'POST'});
+    collectPollTimer = setInterval(async()=>{
+      const s = await api('/api/collect/status');
+      if (!s.collecting) {
+        clearInterval(collectPollTimer);
+        btn.disabled=false; btn.textContent='🔍 수집';
+        showToast('수집 완료!','success');
+        setTimeout(()=>{ loadStats(); loadArticles(); }, 800);
+      }
+    }, 5000);
+  } catch(e) { btn.disabled=false; btn.textContent='🔍 수집'; showToast('수집 실패: '+e.message,'error'); }
+}
+
+// ══════════════════════════════════════════════════════
+// 공통 유틸
+// ══════════════════════════════════════════════════════
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function setEl(id,v) { const el=document.getElementById(id); if(el) el.textContent=v; }
+let toastTimer=null;
+function showToast(msg,type='info') {
+  const t=document.getElementById('toast'); t.textContent=msg; t.className=`toast ${type} show`;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+</script>
+</body>
+</html>
