@@ -140,17 +140,19 @@ export function initBizOppsTable() {
     CREATE INDEX IF NOT EXISTS idx_biz_sol ON biz_opps(sol);
     CREATE INDEX IF NOT EXISTS idx_biz_pri ON biz_opps(priority);
   `);
-  // 기존 DB 마이그레이션: src_type 컬럼 추가
+  // 기존 DB 마이그레이션
   try { getDb().exec(`ALTER TABLE biz_opps ADD COLUMN src_type TEXT NOT NULL DEFAULT 'bank'`); } catch {}
   try { getDb().exec(`CREATE INDEX IF NOT EXISTS idx_biz_srctype ON biz_opps(src_type)`); } catch {}
+  try { getDb().exec(`ALTER TABLE biz_opps ADD COLUMN biz_type TEXT NOT NULL DEFAULT ''`); } catch {}
+  try { getDb().exec(`CREATE INDEX IF NOT EXISTS idx_biz_biztype ON biz_opps(biz_type)`); } catch {}
 }
 
 export function insertBizOpps(items) {
   const db = getDb();
   const stmt = db.prepare(`
     INSERT OR IGNORE INTO biz_opps
-      (title, org, sol, priority, deadline, budget, summary, source, published_at, collected_at, src_type)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?)
+      (title, org, sol, priority, deadline, budget, summary, source, published_at, collected_at, src_type, biz_type)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
   `);
   const now = new Date().toISOString();
   let saved = 0;
@@ -159,20 +161,21 @@ export function insertBizOpps(items) {
       a.title||'', a.org||'', a.sol||'', a.priority||'중',
       a.deadline||'확인필요', a.budget||'미공개',
       a.summary||'', a.source||'', a.published_at||null, now,
-      a.src_type||'bank'
+      a.src_type||'bank', a.biz_type||''
     );
     if (r.changes) saved++;
   }
   return saved;
 }
 
-export function queryBizOpps({ org, sol, priority, srcType, dateFrom, dateTo } = {}) {
+export function queryBizOpps({ org, sol, priority, srcType, bizType, dateFrom, dateTo } = {}) {
   const db = getDb();
   const conds = [], params = [];
-  if (org)      { conds.push(`org = ?`);               params.push(org); }
-  if (sol)      { conds.push(`sol = ?`);               params.push(sol); }
-  if (priority) { conds.push(`priority = ?`);          params.push(priority); }
-  if (srcType)  { conds.push(`src_type = ?`);          params.push(srcType); }
+  if (org)      { conds.push(`org = ?`);                 params.push(org); }
+  if (sol)      { conds.push(`sol = ?`);                 params.push(sol); }
+  if (priority) { conds.push(`priority = ?`);            params.push(priority); }
+  if (srcType)  { conds.push(`src_type = ?`);            params.push(srcType); }
+  if (bizType)  { conds.push(`biz_type = ?`);            params.push(bizType); }
   if (dateFrom) { conds.push(`DATE(collected_at) >= ?`); params.push(dateFrom); }
   if (dateTo)   { conds.push(`DATE(collected_at) <= ?`); params.push(dateTo); }
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';

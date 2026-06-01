@@ -46,8 +46,10 @@ function toG2BDate(date, time = '0000') {
   return date.toISOString().slice(0, 10).replace(/-/g, '') + time;
 }
 
-const ENDPOINT_THNG  = 'https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoThng';   // 물품
-const ENDPOINT_SERVC = 'https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc';  // 용역
+const ENDPOINTS = [
+  { url: 'https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoThng',  biz_type: '물품', label: '사전규격 — 물품' },
+  { url: 'https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc', biz_type: '용역', label: '사전규격 — 용역' },
+];
 
 async function fetchPreSpecs(endpoint, bgnDt, endDt, page = 1) {
   const url = new URL(endpoint);
@@ -91,6 +93,7 @@ function toOpportunity(it) {
     source:       it.specDocFileUrl1 || 'https://www.g2b.go.kr',
     published_at: it.rcptDt?.slice(0, 10) || null,
     src_type:     'g2b',
+    biz_type:     it._biz_type || '',
   };
 }
 
@@ -116,19 +119,16 @@ export async function main() {
 
   const allIT = [];
 
-  const tasks = [
-    { label: '사전규격 — 물품', endpoint: ENDPOINT_THNG  },
-    { label: '사전규격 — 용역', endpoint: ENDPOINT_SERVC },
-  ];
-
-  for (const { label, endpoint } of tasks) {
+  for (const { url, biz_type, label } of ENDPOINTS) {
     process.stdout.write(`  ${label} ... `);
     try {
-      const raw = await fetchPreSpecs(endpoint, bgnDt, endDt);
-      const itItems = raw.filter(it => {
-        const text = (it.prdctClsfcNoNm || '') + ' ' + (it.prdctDtlList || '');
-        return matchesIT(text) || it.swBizObjYn === 'Y';
-      });
+      const raw = await fetchPreSpecs(url, bgnDt, endDt);
+      const itItems = raw
+        .filter(it => {
+          const text = (it.prdctClsfcNoNm || '') + ' ' + (it.prdctDtlList || '');
+          return matchesIT(text) || it.swBizObjYn === 'Y';
+        })
+        .map(it => ({ ...it, _biz_type: biz_type }));
       allIT.push(...itItems);
       console.log(`✅ 전체 ${raw.length}건 → IT 관련 ${itItems.length}건`);
     } catch (e) {

@@ -426,6 +426,13 @@ header {
             <button class="filter-btn" data-borg="신한은행"        onclick="setBizOrg('신한은행',this)">신한은행</button>
             <button class="filter-btn" data-borg="NH농협은행"      onclick="setBizOrg('NH농협은행',this)">NH농협</button>
           </div>
+          <!-- 물품/용역 필터 (공공사업 선택 시만 표시) -->
+          <div class="toolbar-row" id="biz-biztype-row" style="display:none;">
+            <span class="filter-label">유형</span>
+            <button class="filter-btn active" data-btype2="all"   onclick="setBizBizType('all',this)">전체</button>
+            <button class="filter-btn" data-btype2="물품"          onclick="setBizBizType('물품',this)">📦 물품</button>
+            <button class="filter-btn" data-btype2="용역"          onclick="setBizBizType('용역',this)">🔧 용역</button>
+          </div>
           <!-- 솔루션 필터 -->
           <div class="toolbar-row">
             <span class="filter-label">솔루션</span>
@@ -643,13 +650,14 @@ function goPage(p) { state.page=p; loadArticles(); window.scrollTo({top:0,behavi
 // ══════════════════════════════════════════════════════
 // 사업공고자료 섹션
 // ══════════════════════════════════════════════════════
-let bizLoaded   = false;
-let bizTypeFilter = 'all';   // 'all' | 'bank' | 'g2b'
-let bizOrgFilter  = 'all';
-let bizSolFilter  = 'all';
-let bizDateFrom   = '';
-let bizDateTo     = '';
-let bizPollTimer  = null;
+let bizLoaded       = false;
+let bizTypeFilter   = 'all';   // 'all' | 'bank' | 'g2b'
+let bizBizTypeFilter = 'all';  // 'all' | '물품' | '용역'
+let bizOrgFilter    = 'all';
+let bizSolFilter    = 'all';
+let bizDateFrom     = '';
+let bizDateTo       = '';
+let bizPollTimer    = null;
 
 // ── Biz Sidebar ───────────────────────────────────────
 function renderBizSidebar(dates, total) {
@@ -695,16 +703,27 @@ function bizSbSelectDate(date, el) {
 const SOL_LABELS = { ocr:'AI OCR', image:'이미지시스템', rpa:'RPA', id:'신분증인식', digital:'디지털창구' };
 
 function setBizType(type, btn) {
-  bizTypeFilter = type;
-  bizOrgFilter  = 'all';
+  bizTypeFilter    = type;
+  bizOrgFilter     = 'all';
+  bizBizTypeFilter = 'all';
   document.querySelectorAll('[data-btype]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  // 은행 필터 행: 공공사업 선택 시 숨김
-  const bankRow = document.getElementById('biz-bank-row');
-  bankRow.style.display = (type === 'g2b') ? 'none' : '';
-  // 은행 필터 초기화
+  // 은행 필터: 공공사업 선택 시 숨김
+  document.getElementById('biz-bank-row').style.display    = (type === 'g2b') ? 'none' : '';
+  // 물품/용역 필터: 공공사업 선택 시만 표시
+  document.getElementById('biz-biztype-row').style.display = (type === 'g2b') ? '' : 'none';
+  // 필터 초기화
   document.querySelectorAll('[data-borg]').forEach(b => b.classList.remove('active'));
   document.querySelector('[data-borg="all"]').classList.add('active');
+  document.querySelectorAll('[data-btype2]').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-btype2="all"]').classList.add('active');
+  loadBizOpps();
+}
+
+function setBizBizType(type, btn) {
+  bizBizTypeFilter = type;
+  document.querySelectorAll('[data-btype2]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
   loadBizOpps();
 }
 
@@ -712,9 +731,10 @@ async function loadBizOpps() {
   document.getElementById('biz-cards').innerHTML = `<div class="loading-msg"><div class="spinner"></div>사업공고 데이터 불러오는 중...</div>`;
   try {
     const params = new URLSearchParams();
-    if (bizTypeFilter !== 'all') params.set('src_type', bizTypeFilter);
-    if (bizOrgFilter !== 'all')  params.set('org', bizOrgFilter);
-    if (bizSolFilter !== 'all')  params.set('sol', bizSolFilter);
+    if (bizTypeFilter    !== 'all') params.set('src_type', bizTypeFilter);
+    if (bizBizTypeFilter !== 'all') params.set('biz_type', bizBizTypeFilter);
+    if (bizOrgFilter     !== 'all') params.set('org', bizOrgFilter);
+    if (bizSolFilter     !== 'all') params.set('sol', bizSolFilter);
     if (bizDateFrom) params.set('date_from', bizDateFrom);
     if (bizDateTo)   params.set('date_to',   bizDateTo);
     const data = await api(`/api/biz-opps?${params}`);
@@ -763,6 +783,9 @@ function renderBizCards(opps) {
     const pt  = o.priority==='상'?'tag-pri-high':o.priority==='중'?'tag-pri-mid':'tag-pri-low';
     const pl  = o.priority==='상'?'우선순위 상':o.priority==='중'?'우선순위 중':'우선순위 하';
     const isG2b = o.src_type === 'g2b';
+    const bizTypeTag = isG2b && o.biz_type
+      ? `<span class="tag" style="background:${o.biz_type==='물품'?'#FFF3E0':'#F3E5F5'};color:${o.biz_type==='물품'?'#E65100':'#6A1B9A'};border:1px solid ${o.biz_type==='물품'?'#FFCC80':'#CE93D8'}">${o.biz_type==='물품'?'📦':'🔧'} ${o.biz_type}</span>`
+      : '';
     const srcTag = isG2b
       ? `<span class="tag" style="background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7">🏛️ 나라장터</span>`
       : `<span class="tag" style="background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE">🏦 ${esc(o.org)}</span>`;
@@ -776,6 +799,7 @@ function renderBizCards(opps) {
           <div class="a-tags">
             <span class="tag tag-cat-${o.sol}" style="background:#E6F1FB;color:#185FA5">${SOL_LABELS[o.sol]||o.sol}</span>
             ${srcTag}
+            ${bizTypeTag}
             <span class="tag ${pt}">${pl}</span>
             ${budgetTag}
           </div>
