@@ -46,8 +46,11 @@ function toG2BDate(date, time = '0000') {
   return date.toISOString().slice(0, 10).replace(/-/g, '') + time;
 }
 
-async function fetchPreSpecs(bgnDt, endDt, page = 1) {
-  const url = new URL(ENDPOINT);
+const ENDPOINT_THNG  = 'https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoThng';   // 물품
+const ENDPOINT_SERVC = 'https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc';  // 용역
+
+async function fetchPreSpecs(endpoint, bgnDt, endDt, page = 1) {
+  const url = new URL(endpoint);
   url.searchParams.set('serviceKey', SERVICE_KEY);
   url.searchParams.set('type', 'json');
   url.searchParams.set('numOfRows', '100');
@@ -110,18 +113,26 @@ export async function main() {
   console.log(`   조회기간: ${bgnDt} ~ ${endDt}`);
   console.log('='.repeat(60));
 
-  let allRaw = [], allIT = [];
+  const allIT = [];
 
-  process.stdout.write('  사전규격 공개 (전체) ... ');
-  try {
-    allRaw = await fetchPreSpecs(bgnDt, endDt);
-    allIT = allRaw.filter(it => {
-      const text = (it.prdctClsfcNoNm || '') + ' ' + (it.prdctDtlList || '');
-      return matchesIT(text) || it.swBizObjYn === 'Y';
-    });
-    console.log(`✅ 전체 ${allRaw.length}건 → IT 관련 ${allIT.length}건`);
-  } catch (e) {
-    console.log(`❌ ${e.message.slice(0, 80)}`);
+  const tasks = [
+    { label: '사전규격 — 물품', endpoint: ENDPOINT_THNG  },
+    { label: '사전규격 — 용역', endpoint: ENDPOINT_SERVC },
+  ];
+
+  for (const { label, endpoint } of tasks) {
+    process.stdout.write(`  ${label} ... `);
+    try {
+      const raw = await fetchPreSpecs(endpoint, bgnDt, endDt);
+      const itItems = raw.filter(it => {
+        const text = (it.prdctClsfcNoNm || '') + ' ' + (it.prdctDtlList || '');
+        return matchesIT(text) || it.swBizObjYn === 'Y';
+      });
+      allIT.push(...itItems);
+      console.log(`✅ 전체 ${raw.length}건 → IT 관련 ${itItems.length}건`);
+    } catch (e) {
+      console.log(`❌ ${e.message.slice(0, 80)}`);
+    }
   }
 
   const opportunities = allIT.map(toOpportunity);
@@ -130,7 +141,7 @@ export async function main() {
   const saved = insertBizOpps(opportunities);
 
   console.log('='.repeat(60));
-  console.log(`✅ 완료 — 전체 ${allRaw.length}건 중 IT 관련 ${allIT.length}건 | 신규 저장 ${saved}건`);
+  console.log(`✅ 완료 — IT 관련 ${allIT.length}건 | 신규 저장 ${saved}건`);
 
   if (allIT.length > 0) {
     console.log('\n수집된 IT 사전규격:');
@@ -139,7 +150,7 @@ export async function main() {
     });
   }
 
-  return { total_raw: allRaw.length, total_saved: saved };
+  return { total_raw: allIT.length, total_saved: saved };
 }
 
 if (process.argv[1].replace(/\\/g, '/').endsWith('src/collect-g2b.js')) {
