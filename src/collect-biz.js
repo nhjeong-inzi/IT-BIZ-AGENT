@@ -64,7 +64,13 @@ function formatDate(s) {
   return isNaN(d) ? null : d.toISOString().slice(0, 10);
 }
 
-const THIRTY_DAYS = 90 * 24 * 60 * 60 * 1000; // 90일
+function isTodayKST(pubDateStr) {
+  if (!pubDateStr) return true;
+  const pub = new Date(pubDateStr);
+  // KST(UTC+9) 기준 오늘 날짜와 비교
+  const toKSTDate = d => new Date(d.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return toKSTDate(pub) === toKSTDate(new Date());
+}
 
 async function searchBizNews(bank, query) {
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=ko&gl=KR&ceid=KR:ko`;
@@ -75,10 +81,7 @@ async function searchBizNews(bank, query) {
   const xml = await res.text();
 
   return parseRss(xml)
-    .filter(item => {
-      if (!item.pubDate) return true;
-      return (Date.now() - new Date(item.pubDate).getTime()) < THIRTY_DAYS;
-    })
+    .filter(item => isTodayKST(item.pubDate))
     .filter(item => item.title && item.title.length > 5)
     .slice(0, 8)
     .map(item => {
