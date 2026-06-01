@@ -32,10 +32,10 @@ function stripHtml(s) {
     .replace(/\s+/g, ' ').trim();
 }
 
-function isWithin24h(pubDateStr) {
+function isWithin7d(pubDateStr) {
   if (!pubDateStr) return true;
   const diff = Date.now() - new Date(pubDateStr).getTime();
-  return diff >= 0 && diff < 24 * 60 * 60 * 1000;
+  return diff >= 0 && diff < 7 * 24 * 60 * 60 * 1000;
 }
 
 function formatDate(pubDateStr) {
@@ -52,7 +52,7 @@ function getImportance(title, desc) {
 }
 
 export async function searchNews(category, query) {
-  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query + ' when:1d')}&hl=ko&gl=KR&ceid=KR:ko`;
+  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=ko&gl=KR&ceid=KR:ko`;
 
   const res = await fetch(url, {
     headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
@@ -60,7 +60,7 @@ export async function searchNews(category, query) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
   const xml   = await res.text();
-  const items = parseRss(xml).filter(i => isWithin24h(i.pubDate));
+  const items = parseRss(xml).filter(i => isWithin7d(i.pubDate));
 
   return items.slice(0, 8).map(item => ({
     title:        item.title,
